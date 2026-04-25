@@ -24,4 +24,5 @@ frontend/dist/
 Thumbs.db
 
 # VS Code
-.vscode/
+.vscode/chroma_db/
+backend/chroma_db/
