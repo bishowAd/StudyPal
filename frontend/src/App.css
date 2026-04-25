@@ -1,0 +1,144 @@
+/* ── Global reset ──────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #06100a;
+  min-height: 100vh;
+  color: #c8e8c8;
+}
+
+/* ── App layout ───────────────────────────────────────────────────────────── */
+.app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Nav ──────────────────────────────────────────────────────────────────── */
+.app-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: #020d04;
+  border-bottom: 2px solid #1A5632;
+  box-shadow: 0 2px 16px rgba(0,0,0,.5);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.app-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app-nav-logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  color: #FFC629;
+  text-shadow: 1px 1px #0d3320, 0 0 12px rgba(255,198,41,.25);
+  letter-spacing: .04em;
+}
+
+.app-nav-tag {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #1A5632;
+  border: 1px solid #1A5632;
+  border-radius: 2px;
+  padding: 2px 5px;
+  letter-spacing: .06em;
+}
+
+/* ── Mode toggle ──────────────────────────────────────────────────────────── */
+.mode-toggle {
+  display: flex;
+  border: 2px solid #1A5632;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #020d04;
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: #1A5632;
+  letter-spacing: .04em;
+  transition: background .12s, color .12s;
+}
+
+.mode-btn:hover:not(.mode-btn-active) {
+  background: #0a1f0d;
+  color: #4a8860;
+}
+
+.mode-btn-active {
+  background: #1A5632;
+  color: #FFC629;
+}
+
+.mode-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Divider between toggle buttons */
+.mode-toggle .mode-btn + .mode-btn {
+  border-left: 1px solid #1A5632;
+}
+
+/* ── Main content ─────────────────────────────────────────────────────────── */
+.app-main {
+  flex: 1;
+  padding: 24px 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* ── Study placeholder ────────────────────────────────────────────────────── */
+.study-placeholder {
+  text-align: center;
+  padding: 60px 20px;
+  max-width: 400px;
+}
+
+.study-placeholder-icon {
+  font-size: 48px;
+  margin-bottom: 18px;
+}
+
+.study-placeholder h2 {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  color: #FFC629;
+  margin-bottom: 14px;
+  letter-spacing: .04em;
+}
+
+.study-placeholder p {
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  color: #4a8860;
+  line-height: 1.55;
+  margin-bottom: 8px;
+}
+
+.study-placeholder-hint {
+  margin-top: 20px;
+  color: #1A5632;
+  font-size: 18px;
+}
+
+.study-placeholder-hint strong {
+  color: #FFC629;
+}

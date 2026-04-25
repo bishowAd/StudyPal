@@ -1,0 +1,552 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+/* ── Root & Panel ─────────────────────────────────────────────────────────── */
+.kd-root {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  font-family: 'VT323', monospace;
+}
+
+.kd-panel {
+  background: #050f08;
+  border: 3px solid #1A5632;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px #000, 0 0 24px rgba(26, 86, 50, 0.35), inset 0 0 40px rgba(0,0,0,.6);
+  overflow: hidden;
+  position: relative;
+}
+.kd-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.06) 3px, rgba(0,0,0,.06) 4px);
+  pointer-events: none;
+  z-index: 999;
+}
+.kd-panel-gold {
+  border-color: #FFC629;
+  box-shadow: 0 0 0 1px #000, 0 0 24px rgba(255, 198, 41, 0.3);
+}
+.kd-panel-boss {
+  border-color: #FFC629;
+  box-shadow: 0 0 0 1px #000, 0 0 30px rgba(255, 198, 41, 0.2);
+}
+
+/* ── HUD ──────────────────────────────────────────────────────────────────── */
+.kd-hud {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  background: #020a04;
+  border-bottom: 2px solid #1A5632;
+  flex-wrap: wrap;
+}
+.kd-hud-lbl {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  letter-spacing: .04em;
+}
+.kd-hp-lbl { color: #cc4444; }
+.kd-xp-lbl { color: #FFC629; }
+.kd-hud-num {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #688878;
+}
+.kd-bar {
+  height: 13px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  border-radius: 2px;
+  overflow: hidden;
+  background: #010804;
+}
+.kd-hp-bar-main { width: 80px; }
+.kd-xp-bar { width: 65px; }
+.kd-hp-fill-main, .kd-xp-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width .5s ease;
+}
+.kd-xp-fill { background: linear-gradient(90deg, #a07a00, #FFC629); }
+.kd-room-tag {
+  margin-left: auto;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  border: 1px solid;
+}
+.kd-tag-battle { background: #041208; border-color: #1A5632; color: #60c888; }
+.kd-tag-boss { background: #1a1000; border-color: #FFC629; color: #FFC629; animation: kd-blink .9s infinite; }
+.kd-tag-treasure { background: #0e0a00; border-color: #FFC629; color: #FFC629; }
+
+/* ── Battle Scene ─────────────────────────────────────────────────────────── */
+.kd-scene {
+  height: 240px;
+  position: relative;
+  overflow: hidden;
+  background: #020d05;
+  background-image:
+    radial-gradient(ellipse at 20% 100%, rgba(26,86,50,.18) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(26,86,50,.12) 0%, transparent 50%);
+  border-bottom: 2px solid #1A5632;
+}
+.kd-scene-boss {
+  background: #080600;
+  background-image: radial-gradient(ellipse at 50% 100%, rgba(255,198,41,.06) 0%, transparent 70%);
+  border-bottom-color: #FFC629;
+}
+.kd-shake { animation: kd-scene-shake .45s ease-out; }
+@keyframes kd-scene-shake {
+  0%,100%{transform:translateX(0);}
+  15%{transform:translateX(-9px);}
+  30%{transform:translateX(9px);}
+  45%{transform:translateX(-6px);}
+  60%{transform:translateX(6px);}
+  75%{transform:translateX(-3px);}
+  90%{transform:translateX(3px);}
+}
+
+/* Stars */
+.kd-stars { position: absolute; inset: 0; pointer-events: none; }
+.kd-star {
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+  opacity: .35;
+  animation: kd-blink 2s infinite alternate;
+}
+
+/* Ground */
+.kd-ground {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 50px;
+  background: #04180a;
+  border-top: 3px solid #1A5632;
+}
+
+/* Torches */
+.kd-torch {
+  position: absolute;
+  bottom: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.kd-torch-l { left: 90px; }
+.kd-torch-r { right: 110px; }
+.kd-flame {
+  width: 11px;
+  height: 17px;
+  background: #FFC629;
+  border-radius: 60% 60% 30% 30%;
+  box-shadow: 0 0 8px #FFC629, 0 0 16px rgba(255,198,41,.4);
+  animation: kd-flicker .65s ease-in-out infinite alternate;
+}
+@keyframes kd-flicker {
+  from { transform: scaleX(1); opacity: 1; }
+  to   { transform: scaleX(.72) scaleY(.88); opacity: .82; }
+}
+.kd-torch-body { width: 8px; height: 13px; background: #1A5632; border-radius: 1px; }
+.kd-torch-base { width: 13px; height: 4px; background: #0d3320; border-radius: 1px; }
+
+/* Units */
+.kd-unit {
+  position: absolute;
+  bottom: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.kd-player-unit { left: 20px; }
+.kd-mon-unit { right: 10px; }
+.kd-unit-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  color: #4a8860;
+  letter-spacing: .04em;
+}
+.kd-hp-bar-sm {
+  width: 76px;
+  height: 7px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 1px;
+  overflow: hidden;
+  background: #010804;
+}
+.kd-hp-fill-sm, .kd-mon-hp-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width .5s ease;
+}
+.kd-mon-hp-fill { background: linear-gradient(90deg, #6a1010, #cc2030); }
+.kd-mon-shadow {
+  width: 78px;
+  height: 9px;
+  background: rgba(0,0,0,.4);
+  border-radius: 50%;
+  margin-top: 1px;
+}
+
+/* Player sprite animations */
+.kd-player-spr { animation: kd-player-idle 3s ease-in-out infinite; transform-origin: center bottom; }
+@keyframes kd-player-idle { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-4px);} }
+.kd-player-attack { animation: kd-player-attack-kf .55s ease-in-out forwards !important; }
+@keyframes kd-player-attack-kf {
+  0%{transform:translateX(0);}
+  28%{transform:translateX(120px) scaleX(1.1);}
+  55%{transform:translateX(120px);}
+  100%{transform:translateX(0);}
+}
+.kd-player-hurt { animation: kd-player-hurt-kf .5s ease-in-out forwards !important; }
+@keyframes kd-player-hurt-kf {
+  0%{transform:translateX(0);}
+  30%{transform:translateX(-25px);}
+  65%{transform:translateX(-10px);}
+  100%{transform:translateX(0);}
+}
+
+/* Monster sprite animations */
+.kd-mon-spr { animation: kd-mon-float 2.4s ease-in-out infinite; transform-origin: center bottom; }
+@keyframes kd-mon-float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-10px);} }
+.kd-mon-attack { animation: kd-mon-attack-kf .55s ease-in-out forwards !important; }
+@keyframes kd-mon-attack-kf {
+  0%{transform:translateX(0);}
+  30%{transform:translateX(-130px) scaleX(1.1);}
+  60%{transform:translateX(-130px);}
+  100%{transform:translateX(0);}
+}
+.kd-mon-hit { animation: kd-mon-hit-kf .45s ease-out forwards !important; }
+@keyframes kd-mon-hit-kf {
+  0%{filter:brightness(1);}
+  15%{filter:brightness(8) saturate(0);transform:translateX(16px);}
+  40%{filter:brightness(2);transform:translateX(-8px);}
+  60%{filter:brightness(1.5);transform:translateX(5px);}
+  100%{filter:brightness(1);transform:translateX(0);}
+}
+.kd-mon-death { animation: kd-mon-death-kf .8s ease-out forwards !important; }
+@keyframes kd-mon-death-kf {
+  0%{transform:scale(1);opacity:1;}
+  30%{transform:scale(1.3) rotate(6deg);filter:brightness(5) saturate(0);}
+  65%{transform:scale(.6) rotate(-10deg);opacity:.5;}
+  100%{transform:scale(0);opacity:0;}
+}
+
+/* Floats & particles */
+.kd-float {
+  position: absolute;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  pointer-events: none;
+  z-index: 60;
+  text-shadow: 1px 1px #000, 0 0 8px currentColor;
+  animation: kd-float-up 1.2s ease-out forwards;
+}
+@keyframes kd-float-up {
+  0%{transform:translateY(0);opacity:1;}
+  100%{transform:translateY(-60px);opacity:0;}
+}
+.kd-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 55;
+}
+@keyframes kd-blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+/* ── Dialog ───────────────────────────────────────────────────────────────── */
+.kd-dialog {
+  padding: 12px 14px;
+  background: #030d06;
+  border-top: 2px solid #1A5632;
+}
+.kd-dialog-boss {
+  border-top-color: #FFC629;
+  background: #080600;
+}
+.kd-dialog-gold {
+  border-top: 2px solid #FFC629;
+  background: #080600;
+}
+.kd-dialog-header {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: #4a8860;
+  margin-bottom: 7px;
+  letter-spacing: .04em;
+}
+.kd-boss-announce {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #FFC629;
+  letter-spacing: .06em;
+  margin-bottom: 4px;
+  animation: kd-blink .85s infinite;
+}
+.kd-boss-intro {
+  font-size: 18px;
+  color: #c8a050;
+  font-style: italic;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.kd-claim {
+  font-size: 20px;
+  color: #c8e8c8;
+  line-height: 1.4;
+  min-height: 52px;
+}
+.kd-claim span { color: #ff8888; font-style: italic; }
+.kd-cursor { animation: kd-blink .8s infinite; font-size: 16px; color: #FFC629; }
+
+/* ── Options grid ─────────────────────────────────────────────────────────── */
+.kd-opts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #020a04;
+  border-top: 2px solid #0d3320;
+}
+.kd-opt {
+  padding: 9px 10px;
+  border: 2px solid #1A5632;
+  border-radius: 3px;
+  background: #040f07;
+  cursor: pointer;
+  font-size: 17px;
+  color: #90c8a0;
+  text-align: left;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  line-height: 1.35;
+  transition: border-color .1s, background .1s, transform .08s;
+  font-family: 'VT323', monospace;
+}
+.kd-opt:hover:not(.kd-locked) {
+  border-color: #FFC629;
+  background: #0a1f0d;
+  transform: translateY(-1px);
+  color: #e0f0e0;
+}
+.kd-opt-key {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #1A5632;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.kd-correct { background: #041408 !important; border-color: #FFC629 !important; color: #ffe080 !important; }
+.kd-correct .kd-opt-key { color: #FFC629 !important; }
+.kd-wrong { background: #160404 !important; border-color: #cc2020 !important; color: #ff9090 !important; }
+.kd-wrong .kd-opt-key { color: #cc2020 !important; }
+.kd-neutral { opacity: .3; cursor: default; }
+.kd-locked { cursor: default; }
+
+/* ── Explanation ──────────────────────────────────────────────────────────── */
+.kd-exp {
+  padding: 10px 12px;
+  border-top: 2px solid #0d3320;
+  background: #020a04;
+}
+.kd-exp-header {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #1A5632;
+  margin-bottom: 6px;
+  letter-spacing: .04em;
+}
+.kd-exp-body { font-size: 19px; color: #88b898; line-height: 1.5; margin-bottom: 10px; }
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.kd-next-btn {
+  width: 100%;
+  padding: 11px;
+  background: #030d06;
+  border: 2px solid #1A5632;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: #FFC629;
+  letter-spacing: .06em;
+  transition: background .1s, border-color .1s;
+}
+.kd-next-btn:hover { background: #0a1f0d; border-color: #FFC629; }
+.kd-next-gold { border-color: #FFC629; }
+.kd-next-boss { border-color: #FFC629; color: #FFC629; }
+.kd-btn {
+  padding: 10px 16px;
+  background: #030d06;
+  border: 2px solid #1A5632;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: #FFC629;
+  letter-spacing: .04em;
+  transition: background .1s, border-color .1s;
+}
+.kd-btn:hover { background: #0a1f0d; border-color: #FFC629; }
+
+/* ── Treasure ─────────────────────────────────────────────────────────────── */
+.kd-treasure-scene {
+  height: 240px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: #060500;
+  border-bottom: 2px solid #FFC629;
+  position: relative;
+  overflow: hidden;
+}
+.kd-treasure-glow {
+  position: absolute;
+  bottom: 48px; left: 50%;
+  transform: translateX(-50%);
+  width: 200px; height: 35px;
+  background: radial-gradient(ellipse, rgba(255,198,41,.22), transparent);
+  border-radius: 50%;
+}
+.kd-sparkle {
+  position: absolute;
+  width: 5px; height: 5px;
+  background: #FFC629;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #FFC629;
+  animation: kd-spark 1.6s ease-in-out infinite;
+}
+@keyframes kd-spark {
+  0%,100%{opacity:0;transform:scale(0);}
+  45%{opacity:1;transform:scale(1);}
+  75%{opacity:.4;transform:scale(.6);}
+}
+.kd-chest-wrap { margin-bottom: 52px; animation: kd-mon-float 2.2s ease-in-out infinite; }
+.kd-treasure-concept { font-size: 22px; font-weight: bold; color: #FFC629; margin-bottom: 6px; }
+.kd-treasure-fact { font-size: 19px; color: #c8a050; line-height: 1.45; margin-bottom: 10px; }
+.kd-treasure-xp { font-family: 'Press Start 2P', monospace; font-size: 7px; color: #FFC629; margin-bottom: 14px; }
+
+/* ── Select screen ────────────────────────────────────────────────────────── */
+.kd-select-header {
+  padding: 20px 20px 14px;
+  border-bottom: 2px solid #1A5632;
+  background: #020a04;
+}
+.kd-logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 18px;
+  color: #FFC629;
+  line-height: 1.5;
+  text-shadow: 2px 2px #0d3320, 0 0 20px rgba(255,198,41,.3);
+  margin-bottom: 5px;
+}
+.kd-logo-sub {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #1A5632;
+  letter-spacing: .12em;
+  margin-bottom: 12px;
+}
+.kd-select-desc { font-size: 18px; color: #4a8860; line-height: 1.55; }
+.kd-select-body { padding: 14px 18px; }
+.kd-section-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #1A5632;
+  letter-spacing: .06em;
+  margin-bottom: 12px;
+}
+.kd-topic-btn {
+  width: 100%;
+  padding: 13px 14px;
+  background: #030d06;
+  border: 2px solid #1A5632;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 9px;
+  transition: border-color .12s, background .12s, transform .08s;
+  text-align: left;
+}
+.kd-topic-btn:hover { background: #0a1f0d; border-color: #FFC629; transform: translateX(3px); }
+.kd-topic-info { flex: 1; }
+.kd-topic-name { display: block; font-size: 20px; color: #c8e8c8; margin-bottom: 2px; font-family: 'VT323', monospace; }
+.kd-topic-desc { font-size: 15px; color: #1A5632; font-family: 'VT323', monospace; }
+.kd-topic-arrow { font-family: 'Press Start 2P', monospace; font-size: 11px; color: #1A5632; }
+.kd-hint { font-size: 14px; color: #1A5632; text-align: center; margin-top: 12px; font-family: 'VT323', monospace; }
+
+/* ── Loading ──────────────────────────────────────────────────────────────── */
+.kd-loading { padding: 60px 20px; text-align: center; }
+.kd-load-logo {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #1A5632;
+  margin-bottom: 22px;
+  letter-spacing: .06em;
+}
+.kd-load-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
+.kd-load-dots span {
+  display: block; width: 9px; height: 9px;
+  border-radius: 50%; background: #1A5632;
+  animation: kd-blink 1.4s ease-in-out infinite;
+}
+.kd-load-dots span:nth-child(2) { animation-delay: .2s; background: #2a7a50; }
+.kd-load-dots span:nth-child(3) { animation-delay: .4s; background: #FFC629; }
+.kd-load-text {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #FFC629;
+  margin-bottom: 10px;
+  animation: kd-blink 1s infinite;
+}
+.kd-load-sub { font-size: 18px; color: #1A5632; margin-bottom: 18px; line-height: 1.5; }
+.kd-load-sub strong { color: #90c8a0; }
+.kd-load-bar { width: 200px; height: 14px; border: 2px solid #1A5632; border-radius: 2px; margin: 0 auto; background: #010804; overflow: hidden; }
+.kd-load-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1A5632, #FFC629);
+  animation: kd-lfill 3s ease-in-out infinite;
+}
+@keyframes kd-lfill { 0%{width:0%} 60%{width:82%} 90%{width:95%} 100%{width:0%} }
+
+/* ── Game Over ────────────────────────────────────────────────────────────── */
+.kd-over { text-align: center; padding: 36px 20px 28px; position: relative; overflow: hidden; }
+.kd-over-bg {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 40px;
+  opacity: .05;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.kd-over-win .kd-over-bg { color: #FFC629; }
+.kd-over-lose .kd-over-bg { color: #cc2020; }
+.kd-over-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 16px;
+  margin-bottom: 10px;
+  position: relative;
+}
+.kd-win-txt { color: #FFC629; text-shadow: 0 0 20px rgba(255,198,41,.5); }
+.kd-lose-txt { color: #cc2020; text-shadow: 0 0 20px rgba(204,32,32,.4); }
+.kd-over-sub { font-size: 20px; color: #4a8860; margin-bottom: 18px; line-height: 1.55; position: relative; }
+.kd-over-sub strong { color: #90c8a0; }
+.kd-over-xp {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 22px;
+  color: #FFC629;
+  text-shadow: 0 0 14px rgba(255,198,41,.4);
+  margin-bottom: 4px;
+  position: relative;
+}
+.kd-over-xp-lbl { font-size: 15px; color: #1A5632; margin-bottom: 24px; position: relative; }
+.kd-over-btns { display: flex; gap: 10px; justify-content: center; position: relative; }
