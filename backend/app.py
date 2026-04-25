@@ -24,11 +24,13 @@ def create_app():
 
     from src.routes.auth     import auth_bp
     from src.routes.upload   import upload_bp
-    from src.routes.subjects import subjects_bp      
+    from src.routes.subjects import subjects_bp  
+    from src.routes.diagnostic import diagnostic_bp    
 
     app.register_blueprint(auth_bp,     url_prefix='/api/auth')
     app.register_blueprint(upload_bp,   url_prefix='/api/upload')
     app.register_blueprint(subjects_bp, url_prefix='/api/subjects')
+    app.register_blueprint(diagnostic_bp, url_prefix='/api/diagnostic')
 
     from src.routes.games import games_bp
     app.register_blueprint(games_bp)
