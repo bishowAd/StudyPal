@@ -30,6 +30,9 @@ def create_app():
     app.register_blueprint(upload_bp,   url_prefix='/api/upload')
     app.register_blueprint(subjects_bp, url_prefix='/api/subjects')
 
+    from src.routes.games import games_bp
+    app.register_blueprint(games_bp)
+
     @app.route('/')
     def index():
         return jsonify({'status': 'StudyPal API is running'})
