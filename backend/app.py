@@ -20,14 +20,17 @@ def create_app():
     CORS(app, origins=['http://localhost:5173'])
 
     with app.app_context():
-        from src.models import User
+        from src.models import User, Subject, Topic
 
-    from src.routes.auth import auth_bp
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    from src.routes.auth   import auth_bp
+    from src.routes.upload import upload_bp
+
+    app.register_blueprint(auth_bp,   url_prefix='/api/auth')
+    app.register_blueprint(upload_bp, url_prefix='/api/upload')
 
     @app.route('/')
     def index():
-        return jsonify({'status': 'API is running'})
+        return jsonify({'status': 'StudyPal API is running'})
 
     @app.route('/db-check')
     def db_check():
@@ -35,7 +38,7 @@ def create_app():
             db.session.execute(db.text('SELECT 1'))
             return jsonify({'status': 'Database connected successfully'})
         except Exception as e:
-            return jsonify({'status': 'Database connection failed', 'error': str(e)}), 500
+            return jsonify({'status': 'failed', 'error': str(e)}), 500
 
     return app
 
