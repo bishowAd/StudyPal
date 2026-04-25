@@ -19,10 +19,34 @@ interface Subject {
   title: string
 }
 
-type Phase = 'loading' | 'ready' | 'quiz' | 'submitting' | 'done' | 'error'
+interface QuizSettings {
+  questionCount: number
+  quizMode:      'all' | 'weak' | 'random'
+  difficulty:    'easy' | 'medium' | 'hard'
+}
+
+type Phase = 'settings' | 'loading' | 'ready' | 'quiz' | 'submitting' | 'done' | 'error'
+
+const DIFFICULTY_COLOR = {
+  easy:   '#00c97a',
+  medium: '#F2A900',
+  hard:   '#ff4d4d',
+}
+
+const DIFFICULTY_BG = {
+  easy:   'rgba(0,201,122,0.12)',
+  medium: 'rgba(242,169,0,0.12)',
+  hard:   'rgba(255,77,77,0.12)',
+}
+
+const MODE_INFO = {
+  all:    { icon: '📚', label: 'All Topics',   desc: 'Cover everything in the subject'     },
+  weak:   { icon: '🎯', label: 'Weak Only',    desc: 'Focus on topics you struggle with'   },
+  random: { icon: '🎲', label: 'Random Mix',   desc: 'Random selection of topics'          },
+}
 
 export default function Diagnostic() {
-  const [phase,     setPhase]     = useState<Phase>('loading')
+  const [phase,     setPhase]     = useState<Phase>('settings')
   const [subject,   setSubject]   = useState<Subject | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const [current,   setCurrent]   = useState(0)
@@ -31,11 +55,16 @@ export default function Diagnostic() {
   const [results,   setResults]   = useState<{ topic: string; correct: boolean }[]>([])
   const [summary,   setSummary]   = useState<Record<string, number> | null>(null)
   const [error,     setError]     = useState('')
+  const [settings,  setSettings]  = useState<QuizSettings>({
+    questionCount: 10,
+    quizMode:      'all',
+    difficulty:    'medium',
+  })
 
-  const subjectId = localStorage.getItem('subject_id')
+  const subjectId  = localStorage.getItem('subject_id')
+  const initialized = useRef(false)
 
-  // fix 1: declare generateQuiz before useEffect using useCallback
-  const generateQuiz = useCallback(async () => {
+  const generateQuiz = useCallback(async (s: QuizSettings) => {
     setPhase('loading')
     try {
       const res  = await fetch('http://localhost:5000/api/diagnostic/generate', {
@@ -44,7 +73,12 @@ export default function Diagnostic() {
           'Content-Type': 'application/json',
           Authorization:  `Bearer ${getToken()}`,
         },
-        body: JSON.stringify({ subject_id: parseInt(subjectId!) }),
+        body: JSON.stringify({
+          subject_id:     parseInt(subjectId!),
+          question_count: s.questionCount,
+          quiz_mode:      s.quizMode,
+          difficulty:     s.difficulty,
+        }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.message); setPhase('error'); return }
@@ -57,13 +91,10 @@ export default function Diagnostic() {
     }
   }, [subjectId])
 
-  // fix 2: only call generateQuiz in effect — no setState allowed in effect body
-  const initialized = useRef(false)
-
   useEffect(() => {
     if (initialized.current || !subjectId) return
     initialized.current = true
-    generateQuiz()
+    // start on settings screen, don't auto-generate
   }, [subjectId, generateQuiz])
 
   const startQuiz = () => {
@@ -123,13 +154,10 @@ export default function Diagnostic() {
     }
   }
 
-  const progress = questions.length > 0
-    ? Math.round((current / questions.length) * 100)
-    : 0
-
+  const progress     = questions.length > 0 ? Math.round((current / questions.length) * 100) : 0
   const correctCount = results.filter(r => r.correct).length
 
-  // ── No subject selected — derive error at render time, not in effect ────────
+  // ── No subject ────────────────────────────────────────────────────────────
   if (!subjectId) return (
     <Flex h="100vh" align="center" justify="center" direction="column" gap="md">
       <Text size="xl">⚠️</Text>
@@ -143,12 +171,210 @@ export default function Diagnostic() {
     </Flex>
   )
 
+  // ── Settings screen ───────────────────────────────────────────────────────
+  if (phase === 'settings') return (
+    <Flex h="100vh" align="center" justify="center" p="md">
+      <ScrollArea w="100%" mah="100vh">
+        <Stack gap="lg" maw={520} mx="auto" py="xl">
+
+          <Box ta="center">
+            <Text size="xl" mb={4}>🎯</Text>
+            <Text fw={700} size="lg" c="white">Configure Your Quiz</Text>
+            <Text size="xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Customize how you want to be tested
+            </Text>
+          </Box>
+
+          {/* Number of questions */}
+          <Paper p="md" radius="md" style={{
+            background: 'rgba(0,99,65,0.08)',
+            border:     '1px solid rgba(0,99,65,0.25)',
+          }}>
+            <Text size="sm" fw={600} c="white" mb="sm">Number of Questions</Text>
+            <Group gap="sm">
+              {[5, 10, 15, 20].map(n => (
+                <Paper
+                  key={n}
+                  p="sm"
+                  radius="md"
+                  onClick={() => setSettings(s => ({ ...s, questionCount: n }))}
+                  style={{
+                    flex:       1,
+                    textAlign:  'center',
+                    background: settings.questionCount === n
+                      ? 'rgba(0,99,65,0.35)'
+                      : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${settings.questionCount === n
+                      ? 'rgba(0,99,65,0.7)'
+                      : 'rgba(255,255,255,0.08)'}`,
+                    cursor:     'pointer',
+                    transition: 'all .15s',
+                  }}
+                >
+                  <Text fw={700} size="lg" style={{
+                    color: settings.questionCount === n ? '#00c97a' : 'rgba(255,255,255,0.6)',
+                  }}>
+                    {n}
+                  </Text>
+                  <Text size="xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                    {n === 5 ? 'quick' : n === 10 ? 'standard' : n === 15 ? 'long' : 'full'}
+                  </Text>
+                </Paper>
+              ))}
+            </Group>
+          </Paper>
+
+          {/* Quiz mode */}
+          <Paper p="md" radius="md" style={{
+            background: 'rgba(0,99,65,0.08)',
+            border:     '1px solid rgba(0,99,65,0.25)',
+          }}>
+            <Text size="sm" fw={600} c="white" mb="sm">Quiz Mode</Text>
+            <Stack gap="xs">
+              {(['all', 'weak', 'random'] as const).map(mode => (
+                <Paper
+                  key={mode}
+                  p="sm"
+                  radius="md"
+                  onClick={() => setSettings(s => ({ ...s, quizMode: mode }))}
+                  style={{
+                    background: settings.quizMode === mode
+                      ? 'rgba(0,99,65,0.25)'
+                      : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${settings.quizMode === mode
+                      ? 'rgba(0,99,65,0.5)'
+                      : 'rgba(255,255,255,0.08)'}`,
+                    cursor:     'pointer',
+                    transition: 'all .15s',
+                    display:    'flex',
+                    alignItems: 'center',
+                    gap:        12,
+                  }}
+                >
+                  <Text size="lg">{MODE_INFO[mode].icon}</Text>
+                  <Box flex={1}>
+                    <Text size="sm" fw={600} style={{
+                      color: settings.quizMode === mode ? '#ffffff' : 'rgba(255,255,255,0.6)',
+                    }}>
+                      {MODE_INFO[mode].label}
+                    </Text>
+                    <Text size="xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                      {MODE_INFO[mode].desc}
+                    </Text>
+                  </Box>
+                  {settings.quizMode === mode && (
+                    <Box w={8} h={8} style={{
+                      borderRadius: '50%',
+                      background:   '#00c97a',
+                      flexShrink:   0,
+                    }}/>
+                  )}
+                </Paper>
+              ))}
+            </Stack>
+          </Paper>
+
+          {/* Difficulty */}
+          <Paper p="md" radius="md" style={{
+            background: 'rgba(0,99,65,0.08)',
+            border:     '1px solid rgba(0,99,65,0.25)',
+          }}>
+            <Text size="sm" fw={600} c="white" mb="sm">Difficulty</Text>
+            <Group gap="sm">
+              {(['easy', 'medium', 'hard'] as const).map(diff => (
+                <Paper
+                  key={diff}
+                  p="sm"
+                  radius="md"
+                  onClick={() => setSettings(s => ({ ...s, difficulty: diff }))}
+                  style={{
+                    flex:       1,
+                    textAlign:  'center',
+                    background: settings.difficulty === diff
+                      ? DIFFICULTY_BG[diff]
+                      : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${settings.difficulty === diff
+                      ? DIFFICULTY_COLOR[diff] + '66'
+                      : 'rgba(255,255,255,0.08)'}`,
+                    cursor:     'pointer',
+                    transition: 'all .15s',
+                  }}
+                >
+                  <Text size="sm" fw={600} style={{
+                    color:         settings.difficulty === diff
+                      ? DIFFICULTY_COLOR[diff]
+                      : 'rgba(255,255,255,0.5)',
+                    textTransform: 'capitalize',
+                  }}>
+                    {diff === 'easy' ? '😊' : diff === 'medium' ? '🤔' : '🔥'} {diff}
+                  </Text>
+                </Paper>
+              ))}
+            </Group>
+            <Text size="xs" mt="xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+              {settings.difficulty === 'easy'   && 'Basic recall and definition questions'}
+              {settings.difficulty === 'medium' && 'Mix of recall and application questions'}
+              {settings.difficulty === 'hard'   && 'Deep understanding and analysis required'}
+            </Text>
+          </Paper>
+
+          {/* Summary + Start */}
+          <Paper p="md" radius="md" style={{
+            background: 'rgba(242,169,0,0.06)',
+            border:     '1px solid rgba(242,169,0,0.2)',
+          }}>
+            <Group justify="space-between">
+              <Stack gap={2}>
+                <Text size="xs" style={{ color: 'rgba(255,255,255,0.4)' }}>Your quiz</Text>
+                <Text size="sm" c="white" fw={600}>
+                  {settings.questionCount} {MODE_INFO[settings.quizMode].label} questions ·{' '}
+                  <Text span style={{ color: DIFFICULTY_COLOR[settings.difficulty], textTransform: 'capitalize' }}>
+                    {settings.difficulty}
+                  </Text>
+                </Text>
+              </Stack>
+              <Badge size="sm" style={{
+                background: 'rgba(242,169,0,0.15)',
+                color:      '#F2A900',
+              }}>
+                Ready
+              </Badge>
+            </Group>
+          </Paper>
+
+          <Button
+            fullWidth size="md" radius="md"
+            onClick={() => generateQuiz(settings)}
+            style={{
+              background: 'linear-gradient(135deg, #006341, #00855a)',
+              border:     'none',
+              fontWeight: 600,
+              boxShadow:  '0 4px 20px rgba(0,99,65,0.4)',
+            }}
+          >
+            Generate Quiz →
+          </Button>
+
+          <Button size="xs" variant="subtle"
+            style={{ color: 'rgba(255,255,255,0.3)' }}
+            onClick={() => window.location.href = '/knowledge-map'}>
+            ← Back to Knowledge Map
+          </Button>
+
+        </Stack>
+      </ScrollArea>
+    </Flex>
+  )
+
   // ── Loading ───────────────────────────────────────────────────────────────
   if (phase === 'loading') return (
     <Flex h="100vh" align="center" justify="center" direction="column" gap="md">
       <Loader size="md" color="#006341" />
       <Text size="sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-        AI is generating your diagnostic quiz...
+        AI is generating your {settings.difficulty} quiz...
+      </Text>
+      <Text size="xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+        {settings.questionCount} questions · {MODE_INFO[settings.quizMode].label}
       </Text>
     </Flex>
   )
@@ -159,8 +385,8 @@ export default function Diagnostic() {
       <Text size="xl">⚠️</Text>
       <Text size="sm" c="red.4" ta="center" maw={400}>{error}</Text>
       <Button size="xs" variant="subtle" style={{ color: '#00c97a' }}
-        onClick={() => window.location.href = '/knowledge-map'}>
-        ← Back to Knowledge Map
+        onClick={() => setPhase('settings')}>
+        ← Back to Settings
       </Button>
     </Flex>
   )
@@ -175,9 +401,24 @@ export default function Diagnostic() {
         <Stack gap="md" align="center">
           <Text size="xl">🎯</Text>
           <Text fw={600} c="white" ta="center">{subject?.title}</Text>
-          <Text size="sm" ta="center" style={{ color: 'rgba(255,255,255,0.5)' }}>
-            {questions.length} questions · one per topic · no time limit
-          </Text>
+
+          {/* Settings summary badges */}
+          <Group gap="xs" justify="center">
+            <Badge size="sm" style={{ background: 'rgba(0,99,65,0.2)', color: '#00c97a' }}>
+              {questions.length} questions
+            </Badge>
+            <Badge size="sm" style={{ background: 'rgba(0,99,65,0.2)', color: '#00c97a' }}>
+              {MODE_INFO[settings.quizMode].label}
+            </Badge>
+            <Badge size="sm" style={{
+              background: DIFFICULTY_BG[settings.difficulty],
+              color:      DIFFICULTY_COLOR[settings.difficulty],
+              textTransform: 'capitalize',
+            }}>
+              {settings.difficulty}
+            </Badge>
+          </Group>
+
           <Stack gap="xs" w="100%">
             {[
               '✅ Answer each multiple choice question',
@@ -187,16 +428,23 @@ export default function Diagnostic() {
               <Text key={i} size="xs" style={{ color: 'rgba(255,255,255,0.4)' }}>{tip}</Text>
             ))}
           </Stack>
-          <Button fullWidth size="md" radius="md"
-            style={{
-              background: 'linear-gradient(135deg, #006341, #00855a)',
-              border:     'none',
-              fontWeight: 600,
-              boxShadow:  '0 4px 20px rgba(0,99,65,0.4)',
-            }}
-            onClick={startQuiz}>
-            Start Diagnostic →
-          </Button>
+
+          <Group grow w="100%">
+            <Button size="sm" radius="md" variant="outline"
+              style={{ borderColor: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)' }}
+              onClick={() => setPhase('settings')}>
+              ← Change Settings
+            </Button>
+            <Button size="sm" radius="md"
+              style={{
+                background: 'linear-gradient(135deg, #006341, #00855a)',
+                border:     'none',
+                fontWeight: 600,
+              }}
+              onClick={startQuiz}>
+              Start Quiz →
+            </Button>
+          </Group>
         </Stack>
       </Paper>
     </Flex>
@@ -206,9 +454,7 @@ export default function Diagnostic() {
   if (phase === 'submitting') return (
     <Flex h="100vh" align="center" justify="center" direction="column" gap="md">
       <Loader size="md" color="#006341" />
-      <Text size="sm" style={{ color: 'rgba(255,255,255,0.5)' }}>
-        Saving your results...
-      </Text>
+      <Text size="sm" style={{ color: 'rgba(255,255,255,0.5)' }}>Saving your results...</Text>
     </Flex>
   )
 
@@ -231,9 +477,7 @@ export default function Diagnostic() {
               { label: 'Weak',   count: summary.weak,   color: '#ff4d4d', bg: 'rgba(255,77,77,0.15)'  },
             ].map(s => (
               <Paper key={s.label} p="md" radius="md" style={{
-                background: s.bg,
-                border:     `1px solid ${s.color}33`,
-                textAlign:  'center',
+                background: s.bg, border: `1px solid ${s.color}33`, textAlign: 'center',
               }}>
                 <Text size="xl" fw={700} style={{ color: s.color }}>{s.count}</Text>
                 <Text size="xs" style={{ color: 'rgba(255,255,255,0.5)' }}>{s.label}</Text>
@@ -263,14 +507,13 @@ export default function Diagnostic() {
           <Group grow>
             <Button radius="md" variant="outline"
               style={{ borderColor: 'rgba(0,99,65,0.4)', color: 'rgba(255,255,255,0.6)' }}
-              onClick={() => window.location.href = '/knowledge-map'}>
-              Knowledge Map
+              onClick={() => setPhase('settings')}>
+              Retake Quiz
             </Button>
             <Button radius="md"
               style={{
                 background: 'linear-gradient(135deg, #006341, #00855a)',
-                border:     'none',
-                fontWeight: 600,
+                border: 'none', fontWeight: 600,
               }}
               onClick={() => window.location.href = '/study'}>
               Study Weak Topics →
@@ -288,7 +531,6 @@ export default function Diagnostic() {
   return (
     <Flex h="100vh" direction="column">
 
-      {/* Header */}
       <Box px="md" py="sm" style={{
         borderBottom:   '1px solid rgba(0,99,65,0.3)',
         flexShrink:     0,
@@ -302,15 +544,22 @@ export default function Diagnostic() {
             {subject?.title}
           </Text>
         </div>
-        <Text size="xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-          {current + 1} / {questions.length}
-        </Text>
+        <Group gap="xs">
+          <Badge size="xs" style={{
+            background: DIFFICULTY_BG[settings.difficulty],
+            color:      DIFFICULTY_COLOR[settings.difficulty],
+            textTransform: 'capitalize',
+          }}>
+            {settings.difficulty}
+          </Badge>
+          <Text size="xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
+            {current + 1} / {questions.length}
+          </Text>
+        </Group>
       </Box>
 
-      {/* fix 3: Progress bar styles — use 'section' not 'bar' for Mantine v7 */}
       <Progress
-        value={progress}
-        size="xs"
+        value={progress} size="xs"
         style={{ borderRadius: 0 }}
         styles={{ section: { background: 'linear-gradient(90deg, #006341, #00c97a)' } }}
       />
@@ -347,15 +596,11 @@ export default function Diagnostic() {
               }
 
               return (
-                <Paper
-                  key={i} p="md" radius="md"
+                <Paper key={i} p="md" radius="md"
                   onClick={() => handleSelect(option)}
                   style={{
-                    background: bg,
-                    border:     `1px solid ${border}`,
-                    color,
-                    cursor:     revealed ? 'default' : 'pointer',
-                    transition: 'all .15s',
+                    background: bg, border: `1px solid ${border}`, color,
+                    cursor: revealed ? 'default' : 'pointer', transition: 'all .15s',
                   }}
                 >
                   <Text size="sm">{option}</Text>
@@ -370,35 +615,29 @@ export default function Diagnostic() {
               border:     '1px solid rgba(255,255,255,0.08)',
             }}>
               <Text size="xs" fw={600} c="white" mb={4}>💡 Explanation</Text>
-              <Text size="xs" style={{ color: 'rgba(255,255,255,0.6)' }}>
-                {q.explanation}
-              </Text>
+              <Text size="xs" style={{ color: 'rgba(255,255,255,0.6)' }}>{q.explanation}</Text>
             </Paper>
           )}
 
           {!revealed ? (
-            <Button
-              fullWidth size="md" radius="md"
+            <Button fullWidth size="md" radius="md"
               disabled={!selected}
               onClick={handleConfirm}
               style={{
                 background: selected ? 'linear-gradient(135deg, #006341, #00855a)' : undefined,
-                border:     'none',
-                fontWeight: 600,
-                boxShadow:  selected ? '0 4px 20px rgba(0,99,65,0.4)' : undefined,
+                border: 'none', fontWeight: 600,
+                boxShadow: selected ? '0 4px 20px rgba(0,99,65,0.4)' : undefined,
               }}
             >
               Confirm Answer
             </Button>
           ) : (
-            <Button
-              fullWidth size="md" radius="md"
+            <Button fullWidth size="md" radius="md"
               onClick={handleNext}
               style={{
                 background: 'linear-gradient(135deg, #006341, #00855a)',
-                border:     'none',
-                fontWeight: 600,
-                boxShadow:  '0 4px 20px rgba(0,99,65,0.4)',
+                border: 'none', fontWeight: 600,
+                boxShadow: '0 4px 20px rgba(0,99,65,0.4)',
               }}
             >
               {current + 1 >= questions.length ? 'See Results →' : 'Next Question →'}
