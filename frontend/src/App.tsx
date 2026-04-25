@@ -3,6 +3,7 @@ import { AppShell } from '@mantine/core'
 import Sidebar from './components/Sidebar'
 import Login from './pages/Login'
 import Upload from './pages/Upload'
+import KnowledgeMap from './pages/KnowledgeMap'
 
 function isLoggedIn() {
   const token = localStorage.getItem('token')
@@ -44,12 +45,13 @@ export default function App() {
 
         <AppShell.Main style={{ height: '100vh', overflow: 'hidden' }}>
           <Routes>
-            <Route path="/"           element={<div style={{padding: 20, color: 'white'}}>Knowledge Map — coming soon</div>} />
-            <Route path="/diagnostic" element={<div style={{padding: 20, color: 'white'}}>Diagnostic Quiz — coming soon</div>} />
-            <Route path="/study"      element={<div style={{padding: 20, color: 'white'}}>Study Mode — coming soon</div>} />
-            <Route path="/progress"   element={<div style={{padding: 20, color: 'white'}}>Progress — coming soon</div>} />
-            <Route path="/upload" element={<Upload />} />
-            <Route path="*"           element={<Navigate to="/" />} />
+            <Route path="/"              element={<Navigate to="/knowledge-map" />} />
+            <Route path="/knowledge-map" element={<KnowledgeMap />} />
+            <Route path="/upload"        element={<Upload />} />
+            <Route path="/diagnostic"    element={<div style={{ padding: 20, color: 'white' }}>Diagnostic Quiz — coming soon</div>} />
+            <Route path="/study"         element={<div style={{ padding: 20, color: 'white' }}>Study Mode — coming soon</div>} />
+            <Route path="/progress"      element={<div style={{ padding: 20, color: 'white' }}>Progress — coming soon</div>} />
+            <Route path="*"              element={<Navigate to="/knowledge-map" />} />
           </Routes>
         </AppShell.Main>
       </AppShell>

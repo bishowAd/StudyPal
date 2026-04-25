@@ -14,8 +14,8 @@ class Subject(db.Model):
 
     def to_dict(self):
         return {
-            'id':         self.id,
-            'title':      self.title,
-            'created_at': self.created_at.isoformat(),
+            'id':          self.id,
+            'title':       self.title,
+            'created_at':  self.created_at.isoformat(),
             'topic_count': len(self.topics),
         }

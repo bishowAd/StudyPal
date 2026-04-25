@@ -22,11 +22,13 @@ def create_app():
     with app.app_context():
         from src.models import User, Subject, Topic
 
-    from src.routes.auth   import auth_bp
-    from src.routes.upload import upload_bp
+    from src.routes.auth     import auth_bp
+    from src.routes.upload   import upload_bp
+    from src.routes.subjects import subjects_bp      
 
-    app.register_blueprint(auth_bp,   url_prefix='/api/auth')
-    app.register_blueprint(upload_bp, url_prefix='/api/upload')
+    app.register_blueprint(auth_bp,     url_prefix='/api/auth')
+    app.register_blueprint(upload_bp,   url_prefix='/api/upload')
+    app.register_blueprint(subjects_bp, url_prefix='/api/subjects')
 
     @app.route('/')
     def index():
