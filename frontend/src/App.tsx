@@ -7,6 +7,7 @@ import KnowledgeMap from './pages/KnowledgeMap'
 import Diagnostic from './pages/Diagnostic'
 import { useState } from 'react'
 import Dungeon from './pages/Dungeon'
+import ProgressPage from './pages/ProgressPage'
 import './App.css'
 
 function isLoggedIn() {
@@ -91,7 +92,7 @@ export default function App() {
                   <Route path="/upload" element={<Upload />} />
                   <Route path="/diagnostic" element={<Diagnostic />} />
                   <Route path="/study" element={<div style={{ padding: 20, color: 'white' }}>Study Mode — coming soon</div>} />
-                  <Route path="/progress" element={<div style={{ padding: 20, color: 'white' }}>Progress — coming soon</div>} />
+                 <Route path="/progress" element={<ProgressPage />} />
                   <Route path="*" element={<Navigate to="/knowledge-map" />} />
                 </Routes>
               </AppShell.Main>

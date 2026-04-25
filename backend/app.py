@@ -17,21 +17,21 @@ def create_app():
     CORS(app, origins=['http://localhost:5173'])
     with app.app_context():
 
-        from src.models import User, Note
+     from src.models import User, Note
     from src.routes.auth import auth_bp
-    app.register_blueprint(auth_bp, url_prefix='/api/auth')
-
-        from src.models import User, Subject, Topic
+    from src.models import User, Subject, Topic
 
     from src.routes.auth     import auth_bp
     from src.routes.upload   import upload_bp
     from src.routes.subjects import subjects_bp  
-    from src.routes.diagnostic import diagnostic_bp    
+    from src.routes.diagnostic import diagnostic_bp 
+    from src.routes.progress import progress_bp   
 
     app.register_blueprint(auth_bp,     url_prefix='/api/auth')
     app.register_blueprint(upload_bp,   url_prefix='/api/upload')
     app.register_blueprint(subjects_bp, url_prefix='/api/subjects')
     app.register_blueprint(diagnostic_bp, url_prefix='/api/diagnostic')
+    app.register_blueprint(progress_bp, url_prefix='/api/progress')
 
     from src.routes.notes import notes_bp
     app.register_blueprint(notes_bp, url_prefix='/api/notes')
