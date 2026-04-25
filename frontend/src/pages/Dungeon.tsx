@@ -50,7 +50,6 @@ const PLAYER_SVG = `<svg viewBox="0 0 64 96" width="58" height="88" xmlns="http:
 </svg>`
 
 const MONSTERS = [
-  // Ghost scholar
   `<svg viewBox="0 0 100 115" width="100" height="110" xmlns="http://www.w3.org/2000/svg">
     <path d="M16 58 Q16 12 50 10 Q84 12 84 58 L84 112 Q72 100 62 112 Q52 100 50 112 Q48 100 38 112 Q28 100 16 112 Z" fill="#2a6b44"/>
     <path d="M22 62 Q22 22 50 20 Q78 22 78 62 L78 102 Q69 94 62 102 Q55 94 50 102 Q45 94 38 102 Q31 94 22 102 Z" fill="#1A5632" opacity=".5"/>
@@ -64,7 +63,6 @@ const MONSTERS = [
     <line x1="60" y1="75" x2="78" y2="72" stroke="#c03030" stroke-width="2" transform="rotate(-8 60 75)"/>
     <text x="63" y="82" font-size="7" fill="#c03030" transform="rotate(-8 63 82)" font-family="monospace" font-weight="bold">WRONG</text>
   </svg>`,
-  // Slime
   `<svg viewBox="0 0 100 115" width="100" height="110" xmlns="http://www.w3.org/2000/svg">
     <defs><radialGradient id="sg2" cx="38%" cy="30%"><stop offset="0%" stop-color="#3a8c58"/><stop offset="100%" stop-color="#1A5632"/></radialGradient></defs>
     <ellipse cx="50" cy="75" rx="42" ry="32" fill="url(#sg2)"/>
@@ -79,7 +77,6 @@ const MONSTERS = [
     <ellipse cx="75" cy="99" rx="5" ry="8" fill="#236b40"/>
     <ellipse cx="50" cy="105" rx="4" ry="6" fill="#236b40"/>
   </svg>`,
-  // Skeleton
   `<svg viewBox="0 0 100 130" width="95" height="115" xmlns="http://www.w3.org/2000/svg">
     <ellipse cx="50" cy="37" rx="24" ry="23" fill="#d0cbb8"/>
     <ellipse cx="39" cy="34" rx="8.5" ry="9.5" fill="#0a1f12"/>
@@ -141,9 +138,8 @@ const CHEST_SVG = `<svg viewBox="0 0 120 88" width="140" height="103" xmlns="htt
   <circle cx="60" cy="52" r="3" fill="#e6b000"/>
 </svg>`
 
-// ── Constants ──────────────────────────────────────────────────────────────
-const MAX_HP = 5
-const MAX_XP = 220
+const MAX_HP    = 5
+const MAX_XP    = 220
 const XP_BATTLE = 40
 const DEMO_NOTES = {
   'Cell Biology': `Cell structure: Prokaryotic cells lack a nucleus; eukaryotic cells have a membrane-bound nucleus.
@@ -166,64 +162,148 @@ Class attributes: shared by all instances. Instance attributes: unique per objec
   'French Revolution': `Causes: France bankrupt after American Revolution funding + royal extravagance.
 Estates: First=clergy, Second=nobility, Third=97% population bearing tax burden.
 Enlightenment (Rousseau, Voltaire) challenged divine right. Bad harvests spiked bread prices.
-Events: Estates-General 1789. Third Estate → National Assembly. Tennis Court Oath = constitution pledge.
+Events: Estates-General 1789. Third Estate -> National Assembly. Tennis Court Oath = constitution pledge.
 Bastille stormed July 14 1789 = symbolic start. Declaration of Rights of Man = liberty equality fraternity.
 Reign of Terror 1793-94: Robespierre + Committee of Public Safety, 16000+ guillotined.
 Thermidorian Reaction ended Terror; Robespierre executed July 1794.
-Louis XVI executed Jan 1793. Marie Antoinette Oct 1793. Napoleon → First Consul → Emperor.
+Louis XVI executed Jan 1793. Marie Antoinette Oct 1793. Napoleon First Consul then Emperor.
 Outcomes: feudalism abolished, nationalism spread, absolute monarchy ended.`,
 }
 
 type GameScreen = 'select' | 'loading' | 'playing' | 'gameover'
-
 interface FloatMsg { id: number; text: string; color: string; x: number; y: number }
 interface Particle { id: number; x: number; y: number; vx: number; vy: number; color: string; size: number; life: number }
 
-// ── Component ──────────────────────────────────────────────────────────────
+// ── HUD — outside component to fix static-components lint error ────────────
+interface HUDProps {
+  hp: number; maxHp: number; hpPct: number; hpColor: string
+  xp: number; xpPct: number
+  roomType: string; roomIdx: number; totalRooms: number
+}
+function HUD({ hp, maxHp, hpPct, hpColor, xp, xpPct, roomType, roomIdx, totalRooms }: HUDProps) {
+  return (
+    <div className="kd-hud">
+      <span className="kd-hud-lbl kd-hp-lbl">HP</span>
+      <div className="kd-bar kd-hp-bar-main">
+        <div className="kd-hp-fill-main" style={{ width: `${hpPct}%`, background: hpColor }}/>
+      </div>
+      <span className="kd-hud-num">{hp}/{maxHp}</span>
+      <span className="kd-hud-lbl kd-xp-lbl" style={{ marginLeft: 10 }}>XP</span>
+      <div className="kd-bar kd-xp-bar">
+        <div className="kd-xp-fill" style={{ width: `${xpPct}%` }}/>
+      </div>
+      <span className="kd-hud-num">{xp}</span>
+      <div className={`kd-room-tag ${roomType === 'boss' ? 'kd-tag-boss' : roomType === 'treasure' ? 'kd-tag-treasure' : 'kd-tag-battle'}`}>
+        {roomType.toUpperCase()} {roomIdx + 1}/{totalRooms}
+      </div>
+    </div>
+  )
+}
+
+// ── BattleScene — outside component to fix static-components lint error ─────
+interface BattleSceneProps {
+  monSvg: string; monName: string; isBoss: boolean
+  hpPct: number; hpColor: string; monHpPct: number; sceneShake: boolean
+  playerAnim: string; monAnim: string
+  floats: FloatMsg[]; particles: Particle[]
+}
+function BattleScene({
+  monSvg, monName, isBoss,
+  hpPct, hpColor, monHpPct, sceneShake,
+  playerAnim, monAnim, floats, particles,
+}: BattleSceneProps) {
+  return (
+    <div className={`kd-scene ${isBoss ? 'kd-scene-boss' : ''} ${sceneShake ? 'kd-shake' : ''}`}>
+      <div className="kd-stars" aria-hidden="true">
+        {Array.from({ length: 30 }, (_, i) => (
+          <div key={i} className="kd-star" style={{
+            left: `${(i * 37 + 7) % 100}%`, top: `${(i * 53 + 11) % 75}%`,
+            width: `${(i % 3) + 1}px`, height: `${(i % 3) + 1}px`,
+            animationDelay: `${(i % 5) * 0.4}s`,
+          }}/>
+        ))}
+      </div>
+      <div className="kd-torch kd-torch-l"><div className="kd-flame"/><div className="kd-torch-body"/><div className="kd-torch-base"/></div>
+      <div className="kd-torch kd-torch-r"><div className="kd-flame"/><div className="kd-torch-body"/><div className="kd-torch-base"/></div>
+      <div className="kd-ground"/>
+      <div className="kd-unit kd-player-unit">
+        <span className="kd-unit-label">YOU</span>
+        <div className="kd-hp-bar-sm"><div className="kd-hp-fill-sm" style={{ width: `${hpPct}%`, background: hpColor }}/></div>
+        <div className={`kd-player-spr ${playerAnim}`} dangerouslySetInnerHTML={{ __html: PLAYER_SVG }}/>
+      </div>
+      <div className="kd-unit kd-mon-unit">
+        <span className="kd-unit-label" style={{ color: isBoss ? '#FFC629' : '#90c8a0' }}>
+          {monName.toUpperCase()}
+        </span>
+        <div className="kd-hp-bar-sm"><div className="kd-mon-hp-fill" style={{ width: `${monHpPct}%`, transition: 'width .5s ease' }}/></div>
+        <div className={`kd-mon-spr ${monAnim}`} dangerouslySetInnerHTML={{ __html: monSvg }}/>
+        <div className="kd-mon-shadow"/>
+      </div>
+      {floats.map(f => (
+        <div key={f.id} className="kd-float" style={{ left: `${f.x}%`, top: `${f.y}%`, color: f.color }}>
+          {f.text}
+        </div>
+      ))}
+      {particles.map(p => (
+        <div key={p.id} className="kd-particle" style={{
+          left: `${p.x}%`, top: `${p.y}%`,
+          width: p.size, height: p.size, background: p.color,
+        }}/>
+      ))}
+    </div>
+  )
+}
+
+// ── Main component ─────────────────────────────────────────────────────────
 interface DungeonProps { subjectId?: number; roomCount?: number }
 
 export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: DungeonProps) {
-  const [screen, setScreen] = useState<GameScreen>('select')
-  const [topic, setTopic] = useState('')
-  const [dungeon, setDungeon] = useState<Dungeon | null>(null)
-  const [roomIdx, setRoomIdx] = useState(0)
-  const [hp, setHp] = useState(MAX_HP)
-  const [xp, setXp] = useState(0)
-  const [sel, setSel] = useState<number | null>(null)
-  const [revealed, setRevealed] = useState(false)
-  const [result, setResult] = useState<'win' | 'lose' | null>(null)
-  const [animating, setAnimating] = useState(false)
-  const [roomCount, setRoomCount] = useState(initialRoomCount)
-  const [floats, setFloats] = useState<FloatMsg[]>([])
-  const [particles, setParticles] = useState<Particle[]>([])
-  const [monAnim, setMonAnim] = useState('')
-  const [playerAnim, setPlayerAnim] = useState('')
-  const [sceneShake, setSceneShake] = useState(false)
-  const [monHpPct, setMonHpPct] = useState(100)
+  const [screen,         setScreen]         = useState<GameScreen>('select')
+  const [topic,          setTopic]          = useState('')
+  const [dungeon,        setDungeon]        = useState<Dungeon | null>(null)
+  const [roomIdx,        setRoomIdx]        = useState(0)
+  const [hp,             setHp]             = useState(MAX_HP)
+  const [xp,             setXp]             = useState(0)
+  const [sel,            setSel]            = useState<number | null>(null)
+  const [revealed,       setRevealed]       = useState(false)
+  const [result,         setResult]         = useState<'win' | 'lose' | null>(null)
+  const [animating,      setAnimating]      = useState(false)
+  const [roomCount,      setRoomCount]      = useState(initialRoomCount)
+  const [floats,         setFloats]         = useState<FloatMsg[]>([])
+  const [particles,      setParticles]      = useState<Particle[]>([])
+  const [monAnim,        setMonAnim]        = useState('')
+  const [playerAnim,     setPlayerAnim]     = useState('')
+  const [sceneShake,     setSceneShake]     = useState(false)
+  const [monHpPct,       setMonHpPct]       = useState(100)
   const [displayedClaim, setDisplayedClaim] = useState('')
-  const twRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const floatCounter = useRef(0)
+
+  const twRef          = useRef<ReturnType<typeof setInterval> | null>(null)
+  const floatCounter   = useRef(0)
+  const prevRoomIdxRef = useRef(-1)
 
   const currentRoom = dungeon?.rooms[roomIdx]
-  const hpPct = Math.round((hp / MAX_HP) * 100)
-  const xpPct = Math.round(Math.min(xp / MAX_XP, 1) * 100)
+  const hpPct   = Math.round((hp / MAX_HP) * 100)
+  const xpPct   = Math.round(Math.min(xp / MAX_XP, 1) * 100)
   const hpColor = hp <= 1 ? '#cc2020' : hp <= 2 ? '#cc7020' : '#1A5632'
 
-  // Typewriter for question text
+  // ── Typewriter — no setState in effect body ───────────────────────────────
   useEffect(() => {
     if (!currentRoom || screen !== 'playing' || revealed) return
     if (currentRoom.type === 'treasure') return
+
     const text = currentRoom.question
-    setDisplayedClaim('')
     if (twRef.current) clearInterval(twRef.current)
+    prevRoomIdxRef.current = roomIdx
+
     let i = 0
     twRef.current = setInterval(() => {
       setDisplayedClaim(text.slice(0, i + 1))
       i++
       if (i >= text.length) { clearInterval(twRef.current!); twRef.current = null }
     }, 22)
+
     return () => { if (twRef.current) clearInterval(twRef.current) }
-  }, [roomIdx, screen, revealed])
+  }, [roomIdx, screen, revealed, currentRoom])
 
   const addFloat = useCallback((text: string, color: string, x = 55, y = 60) => {
     const id = ++floatCounter.current
@@ -233,21 +313,21 @@ export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: 
 
   const spawnParticles = useCallback((x: number, y: number, colors: string[]) => {
     const newP: Particle[] = Array.from({ length: 16 }, (_, i) => ({
-      id: Date.now() + i,
+      id:    Date.now() + i,
       x, y,
-      vx: (Math.random() - 0.5) * 14,
-      vy: Math.random() * -10 - 2,
+      vx:    (Math.random() - 0.5) * 14,
+      vy:    Math.random() * -10 - 2,
       color: colors[Math.floor(Math.random() * colors.length)],
-      size: 4 + Math.random() * 5,
-      life: 1,
+      size:  4 + Math.random() * 5,
+      life:  1,
     }))
     setParticles(p => [...p, ...newP])
     setTimeout(() => setParticles(p => p.filter(pt => !newP.find(n => n.id === pt.id))), 900)
   }, [])
 
   const triggerAnim = (target: 'mon' | 'player', anim: string) => {
-    if (target === 'mon') { setMonAnim(''); requestAnimationFrame(() => setMonAnim(anim)) }
-    else { setPlayerAnim(''); requestAnimationFrame(() => setPlayerAnim(anim)) }
+    if (target === 'mon')  { setMonAnim('');    requestAnimationFrame(() => setMonAnim(anim))    }
+    else                   { setPlayerAnim(''); requestAnimationFrame(() => setPlayerAnim(anim)) }
   }
 
   async function loadDungeon(t: string) {
@@ -257,10 +337,10 @@ export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: 
     setRoomIdx(0); setHp(MAX_HP); setXp(0)
     setSel(null); setRevealed(false); setResult(null)
     setAnimating(false); setMonHpPct(100); setDisplayedClaim('')
+    prevRoomIdxRef.current = -1
 
-    const token = localStorage.getItem('token')
-    // Use real subjectId if provided by parent, else fall back to demo notes
-    const body = subjectId
+    const token     = localStorage.getItem('token')
+    const body      = subjectId
       ? { subject_id: subjectId, room_count: roomCount }
       : { notes_text: DEMO_NOTES[t as keyof typeof DEMO_NOTES] || '', topic: t, room_count: roomCount }
 
@@ -288,9 +368,9 @@ export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: 
     if (currentRoom.type === 'treasure') return
     setAnimating(true)
     setSel(i)
-    const room = currentRoom as BattleRoom | BossRoom
+    const room    = currentRoom as BattleRoom | BossRoom
     const correct = i === room.correct_index
-    const xpGain = room.type === 'boss' ? (room.bonus_xp ?? 50) : XP_BATTLE
+    const xpGain  = room.type === 'boss' ? (room.bonus_xp ?? 50) : XP_BATTLE
 
     if (correct) {
       triggerAnim('player', 'kd-player-attack')
@@ -328,59 +408,12 @@ export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: 
   function nextRoom() {
     if (!dungeon) return
     if (roomIdx >= dungeon.rooms.length - 1) { setResult('win'); setScreen('gameover'); return }
+    // reset displayedClaim here — NOT inside useEffect
+    setDisplayedClaim('')
     setRoomIdx(r => r + 1)
-    setSel(null); setRevealed(false); setMonHpPct(100); setAnimating(false); setDisplayedClaim('')
+    setSel(null); setRevealed(false); setMonHpPct(100); setAnimating(false)
     setMonAnim(''); setPlayerAnim('')
   }
-
-  // ── Scene ────────────────────────────────────────────────────────────────
-  const BattleScene = ({ monSvg, monName, isBoss }: { monSvg: string; monName: string; isBoss: boolean }) => (
-    <div className={`kd-scene ${isBoss ? 'kd-scene-boss' : ''} ${sceneShake ? 'kd-shake' : ''}`}>
-      {/* Stars */}
-      <div className="kd-stars" aria-hidden="true">
-        {Array.from({ length: 30 }, (_, i) => (
-          <div key={i} className="kd-star" style={{
-            left: `${(i * 37 + 7) % 100}%`, top: `${(i * 53 + 11) % 75}%`,
-            width: `${(i % 3) + 1}px`, height: `${(i % 3) + 1}px`,
-            animationDelay: `${(i % 5) * 0.4}s`,
-          }} />
-        ))}
-      </div>
-      {/* Torches */}
-      <div className="kd-torch kd-torch-l"><div className="kd-flame"/><div className="kd-torch-body"/><div className="kd-torch-base"/></div>
-      <div className="kd-torch kd-torch-r"><div className="kd-flame"/><div className="kd-torch-body"/><div className="kd-torch-base"/></div>
-      {/* Ground */}
-      <div className="kd-ground"/>
-      {/* Player */}
-      <div className="kd-unit kd-player-unit">
-        <span className="kd-unit-label">YOU</span>
-        <div className="kd-hp-bar-sm"><div className="kd-hp-fill-sm" style={{ width: `${hpPct}%`, background: hpColor }}/></div>
-        <div className={`kd-player-spr ${playerAnim}`} dangerouslySetInnerHTML={{ __html: PLAYER_SVG }}/>
-      </div>
-      {/* Monster */}
-      <div className="kd-unit kd-mon-unit">
-        <span className="kd-unit-label" style={{ color: isBoss ? '#FFC629' : '#90c8a0' }}>
-          {monName.toUpperCase()}
-        </span>
-        <div className="kd-hp-bar-sm"><div className="kd-mon-hp-fill" style={{ width: `${monHpPct}%`, transition: 'width .5s ease' }}/></div>
-        <div className={`kd-mon-spr ${monAnim}`} dangerouslySetInnerHTML={{ __html: monSvg }}/>
-        <div className="kd-mon-shadow"/>
-      </div>
-      {/* Floats */}
-      {floats.map(f => (
-        <div key={f.id} className="kd-float" style={{ left: `${f.x}%`, top: `${f.y}%`, color: f.color }}>
-          {f.text}
-        </div>
-      ))}
-      {/* Particles */}
-      {particles.map(p => (
-        <div key={p.id} className="kd-particle" style={{
-          left: `${p.x}%`, top: `${p.y}%`,
-          width: p.size, height: p.size, background: p.color,
-        }}/>
-      ))}
-    </div>
-  )
 
   // ── Screens ──────────────────────────────────────────────────────────────
   if (screen === 'select') return (
@@ -394,7 +427,6 @@ export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: 
           </p>
         </div>
         <div className="kd-select-body">
-          {/* Room count picker — always shown */}
           <div className="kd-section-label">NUMBER OF ROOMS</div>
           <div className="kd-count-row">
             {[5, 10, 15, 20].map(n => (
@@ -408,8 +440,6 @@ export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: 
               </button>
             ))}
           </div>
-
-          {/* If a real subject is passed in, just show a single start button */}
           {subjectId ? (
             <button className="kd-start-btn" onClick={() => loadDungeon('uploaded')}>
               ENTER DUNGEON ▶▶
@@ -470,25 +500,13 @@ export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: 
 
   if (!currentRoom) return null
 
-  // ── HUD ───────────────────────────────────────────────────────────────────
-  const roomType = currentRoom.type
-  const HUD = () => (
-    <div className="kd-hud">
-      <span className="kd-hud-lbl kd-hp-lbl">HP</span>
-      <div className="kd-bar kd-hp-bar-main">
-        <div className="kd-hp-fill-main" style={{ width: `${hpPct}%`, background: hpColor }}/>
-      </div>
-      <span className="kd-hud-num">{hp}/{MAX_HP}</span>
-      <span className="kd-hud-lbl kd-xp-lbl" style={{ marginLeft: 10 }}>XP</span>
-      <div className="kd-bar kd-xp-bar">
-        <div className="kd-xp-fill" style={{ width: `${xpPct}%` }}/>
-      </div>
-      <span className="kd-hud-num">{xp}</span>
-      <div className={`kd-room-tag ${roomType === 'boss' ? 'kd-tag-boss' : roomType === 'treasure' ? 'kd-tag-treasure' : 'kd-tag-battle'}`}>
-        {roomType.toUpperCase()} {roomIdx + 1}/{dungeon?.rooms.length}
-      </div>
-    </div>
-  )
+  const hudProps = {
+    hp, maxHp: MAX_HP, hpPct, hpColor,
+    xp, xpPct,
+    roomType:   currentRoom.type,
+    roomIdx,
+    totalRooms: dungeon?.rooms.length ?? 0,
+  }
 
   // ── Treasure room ─────────────────────────────────────────────────────────
   if (currentRoom.type === 'treasure') {
@@ -496,22 +514,26 @@ export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: 
     return (
       <div className="kd-root">
         <div className="kd-panel kd-panel-gold">
-          <HUD/>
+          <HUD {...hudProps}/>
           <div className="kd-treasure-scene">
             <div className="kd-treasure-glow"/>
-            {[{ top: '20%', left: '20%', delay: '0s' }, { top: '30%', right: '22%', delay: '.5s' },
-              { top: '15%', left: '50%', delay: '.9s' }, { top: '50%', left: '30%', delay: '1.3s' }].map((s, i) => (
+            {[
+              { top: '20%', left: '20%',  delay: '0s'   },
+              { top: '30%', right: '22%', delay: '.5s'  },
+              { top: '15%', left: '50%',  delay: '.9s'  },
+              { top: '50%', left: '30%',  delay: '1.3s' },
+            ].map((s, i) => (
               <div key={i} className="kd-sparkle" style={s as React.CSSProperties}/>
             ))}
             <div className="kd-chest-wrap" dangerouslySetInnerHTML={{ __html: CHEST_SVG }}/>
           </div>
           <div className="kd-dialog kd-dialog-gold">
-            <div className="kd-dialog-header" style={{ color: '#FFC629' }}>★ TREASURE ROOM ★</div>
+            <div className="kd-dialog-header" style={{ color: '#FFC629' }}>TREASURE ROOM</div>
             <div className="kd-treasure-concept">{r.concept}</div>
             <div className="kd-treasure-fact">{r.fun_fact}</div>
             <div className="kd-treasure-xp">+{r.bonus_xp} XP BONUS</div>
             <button className="kd-next-btn kd-next-gold" onClick={() => claimTreasure(r.bonus_xp)}>
-              COLLECT &amp; CONTINUE ▶▶
+              COLLECT &amp; CONTINUE
             </button>
           </div>
         </div>
@@ -521,40 +543,46 @@ export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: 
 
   // ── Battle / Boss room ────────────────────────────────────────────────────
   const isBoss = currentRoom.type === 'boss'
-  const room = currentRoom as BattleRoom | BossRoom
+  const room   = currentRoom as BattleRoom | BossRoom
   const monIdx = roomIdx % MONSTERS.length
-  const KEYS = ['A', 'B', 'C', 'D']
+  const KEYS   = ['A', 'B', 'C', 'D']
 
   return (
     <div className="kd-root">
       <div className={`kd-panel ${isBoss ? 'kd-panel-boss' : ''}`}>
-        <HUD/>
+        <HUD {...hudProps}/>
         <BattleScene
           monSvg={isBoss ? BOSS_SVG : MONSTERS[monIdx]}
           monName={isBoss ? (room as BossRoom).boss_name : (room as BattleRoom).monster_name}
           isBoss={isBoss}
+          hpPct={hpPct}
+          hpColor={hpColor}
+          monHpPct={monHpPct}
+          sceneShake={sceneShake}
+          playerAnim={playerAnim}
+          monAnim={monAnim}
+          floats={floats}
+          particles={particles}
         />
-        {/* Dialog box */}
         <div className={`kd-dialog ${isBoss ? 'kd-dialog-boss' : ''}`}>
-          {isBoss && <div className="kd-boss-announce">☠ FINAL BOSS ☠</div>}
+          {isBoss && <div className="kd-boss-announce">FINAL BOSS</div>}
           {isBoss && <div className="kd-boss-intro">{(room as BossRoom).boss_intro}</div>}
           <div className="kd-dialog-header">
-            ▶ {isBoss ? (room as BossRoom).boss_name.toUpperCase() : (room as BattleRoom).monster_name.toUpperCase()}
+            {isBoss ? (room as BossRoom).boss_name.toUpperCase() : (room as BattleRoom).monster_name.toUpperCase()}
           </div>
           <div className="kd-claim">
             {revealed ? room.question : displayedClaim}
             {!revealed && <span className="kd-cursor">█</span>}
           </div>
         </div>
-        {/* Options */}
         <div className="kd-opts">
           {room.options.map((opt, i) => {
             let cls = 'kd-opt'
             if (revealed) {
               cls += ' kd-locked'
               if (i === room.correct_index) cls += ' kd-correct'
-              else if (i === sel) cls += ' kd-wrong'
-              else cls += ' kd-neutral'
+              else if (i === sel)           cls += ' kd-wrong'
+              else                          cls += ' kd-neutral'
             }
             return (
               <button key={i} className={cls} onClick={() => answer(i)}>
@@ -564,14 +592,13 @@ export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: 
             )
           })}
         </div>
-        {/* Explanation */}
         {revealed && (
           <div className="kd-exp">
-            <div className="kd-exp-header">▶ VERDICT</div>
+            <div className="kd-exp-header">VERDICT</div>
             <div className="kd-exp-body">{room.explanation}</div>
             {hp > 0 && (
               <button className={`kd-next-btn ${isBoss ? 'kd-next-boss' : ''}`} onClick={nextRoom}>
-                {roomIdx === (dungeon?.rooms.length ?? 0) - 1 ? 'COMPLETE FLOOR ▶▶' : 'NEXT ROOM ▶▶'}
+                {roomIdx === (dungeon?.rooms.length ?? 0) - 1 ? 'COMPLETE FLOOR' : 'NEXT ROOM'}
               </button>
             )}
           </div>
