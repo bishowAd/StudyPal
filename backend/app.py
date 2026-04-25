@@ -16,9 +16,22 @@ def create_app():
     jwt.init_app(app)
     CORS(app, origins=['http://localhost:5173'])
     with app.app_context():
+
         from src.models import User, Note
     from src.routes.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
+
+        from src.models import User, Subject, Topic
+
+    from src.routes.auth     import auth_bp
+    from src.routes.upload   import upload_bp
+    from src.routes.subjects import subjects_bp  
+    from src.routes.diagnostic import diagnostic_bp    
+
+    app.register_blueprint(auth_bp,     url_prefix='/api/auth')
+    app.register_blueprint(upload_bp,   url_prefix='/api/upload')
+    app.register_blueprint(subjects_bp, url_prefix='/api/subjects')
+    app.register_blueprint(diagnostic_bp, url_prefix='/api/diagnostic')
 
     from src.routes.notes import notes_bp
     app.register_blueprint(notes_bp, url_prefix='/api/notes')
@@ -33,13 +46,19 @@ def create_app():
     @app.route('/')
     def index():
         return jsonify({'status': 'API is running'})
+        return jsonify({'status': 'StudyPal API is running'})
+
     @app.route('/db-check')
     def db_check():
         try:
             db.session.execute(db.text('SELECT 1'))
             return jsonify({'status': 'Database connected successfully'})
         except Exception as e:
+
             return jsonify({'status': 'Database connection failed', 'error': str(e)}), 500
+
+            return jsonify({'status': 'failed', 'error': str(e)}), 500
+
     return app
 
 if __name__ == '__main__':
