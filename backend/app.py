@@ -19,6 +19,10 @@ def create_app():
 
      from src.models import User, Note
     from src.routes.auth import auth_bp
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
     from src.models import User, Subject, Topic
 
     from src.routes.auth     import auth_bp

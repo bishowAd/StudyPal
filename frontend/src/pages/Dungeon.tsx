@@ -180,7 +180,9 @@ interface FloatMsg { id: number; text: string; color: string; x: number; y: numb
 interface Particle { id: number; x: number; y: number; vx: number; vy: number; color: string; size: number; life: number }
 
 // ── Component ──────────────────────────────────────────────────────────────
-export default function Dungeon() {
+interface DungeonProps { subjectId?: number; roomCount?: number }
+
+export default function Dungeon({ subjectId, roomCount: initialRoomCount = 5 }: DungeonProps) {
   const [screen, setScreen] = useState<GameScreen>('select')
   const [topic, setTopic] = useState('')
   const [dungeon, setDungeon] = useState<Dungeon | null>(null)
@@ -191,6 +193,7 @@ export default function Dungeon() {
   const [revealed, setRevealed] = useState(false)
   const [result, setResult] = useState<'win' | 'lose' | null>(null)
   const [animating, setAnimating] = useState(false)
+  const [roomCount, setRoomCount] = useState(initialRoomCount)
   const [floats, setFloats] = useState<FloatMsg[]>([])
   const [particles, setParticles] = useState<Particle[]>([])
   const [monAnim, setMonAnim] = useState('')
@@ -256,7 +259,10 @@ export default function Dungeon() {
     setAnimating(false); setMonHpPct(100); setDisplayedClaim('')
 
     const token = localStorage.getItem('token')
-    const notesText = DEMO_NOTES[t as keyof typeof DEMO_NOTES] || ''
+    // Use real subjectId if provided by parent, else fall back to demo notes
+    const body = subjectId
+      ? { subject_id: subjectId, room_count: roomCount }
+      : { notes_text: DEMO_NOTES[t as keyof typeof DEMO_NOTES] || '', topic: t, room_count: roomCount }
 
     try {
       const res = await fetch('http://localhost:5000/api/games/dungeon/generate', {
@@ -265,7 +271,7 @@ export default function Dungeon() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ notes_text: notesText, topic: t }),
+        body: JSON.stringify(body),
       })
       if (!res.ok) throw new Error(`Server error ${res.status}`)
       const data: Dungeon = await res.json()
@@ -388,17 +394,41 @@ export default function Dungeon() {
           </p>
         </div>
         <div className="kd-select-body">
-          <div className="kd-section-label">CHOOSE YOUR DUNGEON</div>
-          {Object.keys(DEMO_NOTES).map(t => (
-            <button key={t} className="kd-topic-btn" onClick={() => loadDungeon(t)}>
-              <div className="kd-topic-info">
-                <span className="kd-topic-name">{t}</span>
-                <span className="kd-topic-desc">5 rooms · battle · boss</span>
-              </div>
-              <span className="kd-topic-arrow">▶</span>
+          {/* Room count picker — always shown */}
+          <div className="kd-section-label">NUMBER OF ROOMS</div>
+          <div className="kd-count-row">
+            {[5, 10, 15, 20].map(n => (
+              <button
+                key={n}
+                className={`kd-count-btn ${roomCount === n ? 'kd-count-active' : ''}`}
+                onClick={() => setRoomCount(n)}
+              >
+                <span className="kd-count-num">{n}</span>
+                <span className="kd-count-sub">{n === 5 ? 'quick' : n === 10 ? 'standard' : n === 15 ? 'long' : 'epic'}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* If a real subject is passed in, just show a single start button */}
+          {subjectId ? (
+            <button className="kd-start-btn" onClick={() => loadDungeon('uploaded')}>
+              ENTER DUNGEON ▶▶
             </button>
-          ))}
-          <p className="kd-hint">In the full app, dungeons generate from your uploaded notes.</p>
+          ) : (
+            <>
+              <div className="kd-section-label" style={{ marginTop: 16 }}>CHOOSE YOUR NOTES</div>
+              {Object.keys(DEMO_NOTES).map(t => (
+                <button key={t} className="kd-topic-btn" onClick={() => loadDungeon(t)}>
+                  <div className="kd-topic-info">
+                    <span className="kd-topic-name">{t}</span>
+                    <span className="kd-topic-desc">{roomCount} rooms · battle · boss</span>
+                  </div>
+                  <span className="kd-topic-arrow">▶</span>
+                </button>
+              ))}
+              <p className="kd-hint">In the full app, dungeons generate from your uploaded notes.</p>
+            </>
+          )}
         </div>
       </div>
     </div>

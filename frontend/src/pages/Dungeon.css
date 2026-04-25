@@ -550,3 +550,77 @@
 }
 .kd-over-xp-lbl { font-size: 15px; color: #1A5632; margin-bottom: 24px; position: relative; }
 .kd-over-btns { display: flex; gap: 10px; justify-content: center; position: relative; }
+/* ── Room count picker ────────────────────────────────────────────────────── */
+.kd-count-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.kd-count-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #1A5632;
+  letter-spacing: .06em;
+  margin-right: 4px;
+}
+.kd-count-btn {
+  padding: 7px 16px;
+  background: #040f07;
+  border: 2px solid #1A5632;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #4a8860;
+  transition: border-color .1s, color .1s, background .1s;
+}
+.kd-count-btn:hover { border-color: #FFC629; color: #FFC629; }
+.kd-count-active { background: #1A5632 !important; color: #FFC629 !important; border-color: #1A5632 !important; }
+
+/* ── Setup screen count cards ─────────────────────────────────────────────── */
+.kd-count-btn {
+  flex: 1;
+  padding: 12px 8px;
+  background: #040f07;
+  border: 2px solid #1A5632;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transition: border-color .12s, background .12s;
+}
+.kd-count-btn:hover { border-color: #FFC629; background: #0a1f0d; }
+.kd-count-num {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 16px;
+  color: #4a8860;
+}
+.kd-count-sub {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #1A5632;
+  letter-spacing: .04em;
+}
+.kd-count-active { background: #1A5632 !important; border-color: #FFC629 !important; }
+.kd-count-active .kd-count-num { color: #FFC629; }
+.kd-count-active .kd-count-sub { color: #e6b000; }
+
+.kd-start-btn {
+  width: 100%;
+  padding: 14px;
+  background: #1A5632;
+  border: 2px solid #FFC629;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: #FFC629;
+  letter-spacing: .06em;
+  margin-top: 8px;
+  transition: background .12s;
+  text-shadow: 1px 1px #0d3320;
+}
+.kd-start-btn:hover { background: #236b40; }

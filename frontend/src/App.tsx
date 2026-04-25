@@ -5,9 +5,7 @@ import Login from './pages/Login'
 import Upload from './pages/Upload'
 import KnowledgeMap from './pages/KnowledgeMap'
 import Diagnostic from './pages/Diagnostic'
-import { useState } from 'react'
-import Dungeon from './pages/Dungeon'
-import ProgressPage from './pages/ProgressPage'
+import StudyMode from './pages/StudyMode'
 import './App.css'
 
 function isLoggedIn() {
@@ -26,12 +24,7 @@ function isLoggedIn() {
   }
 }
 
-type Mode = 'study' | 'game'
-
 export default function App() {
-  const [mode, setMode] = useState<Mode>('study')
-
-  // 1. If not logged in, only show the Login route
   if (!isLoggedIn()) {
     return (
       <BrowserRouter>
@@ -42,70 +35,24 @@ export default function App() {
     )
   }
 
-  // 2. If logged in, show the App with the Mode Toggle
   return (
     <BrowserRouter>
-      <div className="app-root" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        
-        {/* Top Navigation (From Version 2) */}
-        <nav className="app-nav">
-          <div className="app-nav-brand">
-            <span className="app-nav-logo">StudyPal</span>
-            <span className="app-nav-tag">SLU</span>
-          </div>
-          <div className="mode-toggle" role="group" aria-label="App mode">
-            <button
-              className={`mode-btn ${mode === 'study' ? 'mode-btn-active' : ''}`}
-              onClick={() => setMode('study')}
-            >
-              <span className="mode-icon">📚</span>
-              Study
-            </button>
-            <button
-              className={`mode-btn ${mode === 'game' ? 'mode-btn-active' : ''}`}
-              onClick={() => setMode('game')}
-            >
-              <span className="mode-icon">⚔️</span>
-              Game
-            </button>
-          </div>
-        </nav>
-
-        {/* Main Content Area */}
-        <main className="app-main" style={{ flex: 1, overflow: 'hidden' }}>
-          {mode === 'study' ? (
-            
-            /* --- STUDY MODE: Mantine Layout & Routing (From Version 1) --- */
-            <AppShell
-              navbar={{ width: 220, breakpoint: 'sm' }}
-              padding={0}
-              style={{ height: '100%' }}
-            >
-              <AppShell.Navbar>
-                <Sidebar />
-              </AppShell.Navbar>
-
-              <AppShell.Main style={{ height: '100%', overflow: 'hidden' }}>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/knowledge-map" />} />
-                  <Route path="/knowledge-map" element={<KnowledgeMap />} />
-                  <Route path="/upload" element={<Upload />} />
-                  <Route path="/diagnostic" element={<Diagnostic />} />
-                  <Route path="/study" element={<div style={{ padding: 20, color: 'white' }}>Study Mode — coming soon</div>} />
-                 <Route path="/progress" element={<ProgressPage />} />
-                  <Route path="*" element={<Navigate to="/knowledge-map" />} />
-                </Routes>
-              </AppShell.Main>
-            </AppShell>
-
-          ) : (
-            
-            /* --- GAME MODE: Dungeon Component (From Version 2) --- */
-            <Dungeon />
-            
-          )}
-        </main>
-      </div>
+      <AppShell navbar={{ width: 220, breakpoint: 'sm' }} padding={0} style={{ height: '100vh' }}>
+        <AppShell.Navbar>
+          <Sidebar />
+        </AppShell.Navbar>
+        <AppShell.Main style={{ height: '100%', overflow: 'hidden' }}>
+          <Routes>
+            <Route path="/"             element={<Navigate to="/knowledge-map" />} />
+            <Route path="/knowledge-map" element={<KnowledgeMap />} />
+            <Route path="/upload"       element={<Upload />} />
+            <Route path="/diagnostic"   element={<Diagnostic />} />
+            <Route path="/study"        element={<StudyMode />} />
+            <Route path="/progress"     element={<div style={{ padding: 20, color: 'white' }}>Progress — coming soon</div>} />
+            <Route path="*"             element={<Navigate to="/knowledge-map" />} />
+          </Routes>
+        </AppShell.Main>
+      </AppShell>
     </BrowserRouter>
   )
 }
